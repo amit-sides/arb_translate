@@ -169,16 +169,32 @@ abstract class TranslationDelegate {
       return null;
     }
 
-    final trimmedResponse = response.substring(
-      response.indexOf('{'),
-      response.lastIndexOf('}') + 1,
-    );
+    // Check if response contains JSON braces
+    if (!response.contains('{') || !response.contains('}')) {
+      print('Warning: Response does not contain valid JSON structure');
+      print('Response preview: ${response.substring(0, response.length > 200 ? 200 : response.length)}');
+      return null;
+    }
+
+    String trimmedResponse;
+    try {
+      trimmedResponse = response.substring(
+        response.indexOf('{'),
+        response.lastIndexOf('}') + 1,
+      );
+    } catch (e) {
+      print('Warning: Failed to extract JSON from response: $e');
+      print('Response preview: ${response.substring(0, response.length > 200 ? 200 : response.length)}');
+      return null;
+    }
 
     Map<String, Object?> responseJson;
 
     try {
       responseJson = json.decode(trimmedResponse);
     } catch (e) {
+      print('Warning: Failed to decode JSON: $e');
+      print('JSON preview: ${trimmedResponse.substring(0, trimmedResponse.length > 500 ? 500 : trimmedResponse.length)}');
       return null;
     }
 
@@ -186,7 +202,16 @@ abstract class TranslationDelegate {
       (key) => !key.startsWith('@'),
     );
 
+    // Check if all expected keys are present
+    final missingKeys = messageResources.where((key) => !responseJson.containsKey(key)).toList();
+    if (missingKeys.isNotEmpty) {
+      print('Warning: Response is missing keys: ${missingKeys.take(5).join(", ")}${missingKeys.length > 5 ? "..." : ""}');
+      return null;
+    }
+
     if (messageResources.any((key) => responseJson[key] is! String)) {
+      final invalidKeys = messageResources.where((key) => responseJson[key] is! String).toList();
+      print('Warning: Some keys do not have string values: ${invalidKeys.take(3).join(", ")}${invalidKeys.length > 3 ? "..." : ""}');
       return null;
     }
 
