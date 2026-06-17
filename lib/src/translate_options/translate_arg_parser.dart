@@ -17,6 +17,8 @@ class TranslateArgResults {
     required this.customModelProviderBaseUrl,
     required this.disableSafety,
     required this.batchSize,
+    required this.maxParallelQueries,
+    required this.cooldownBetweenBatches,
     required this.context,
     required this.excludeLocales,
     required this.arbDir,
@@ -59,6 +61,12 @@ class TranslateArgResults {
   /// batch. The actual number can be higher if a single message is too large.
   final int? batchSize;
 
+  /// The maximum number of parallel batch queries to run concurrently.
+  final int? maxParallelQueries;
+
+  /// The cooldown duration in seconds between batch requests.
+  final int? cooldownBetweenBatches;
+
   /// The directory containing the ARB files.
   final String? arbDir;
 
@@ -87,6 +95,8 @@ class TranslateArgParser {
   static const _contextKey = 'context';
   static const _excludeLocalesKey = 'exclude-locales';
   static const _batchSizeKey = 'batch-size';
+  static const _maxParallelQueriesKey = 'max-parallel-queries';
+  static const _cooldownBetweenBatchesKey = 'cooldown-between-batches';
 
   final _parser =
       ArgParser(
@@ -154,6 +164,18 @@ class TranslateArgParser {
               'single batch. The actual number can be higher if a single message '
               'is too large.',
           defaultsTo: '4096',
+        )
+        ..addOption(
+          _maxParallelQueriesKey,
+          help:
+              'The maximum number of parallel batch queries to run concurrently.',
+          defaultsTo: '5',
+        )
+        ..addOption(
+          _cooldownBetweenBatchesKey,
+          help:
+              'The cooldown duration in seconds between batch requests.',
+          defaultsTo: '0',
         )
         ..addSeparator('ARB options:')
         ..addOption(
@@ -223,6 +245,14 @@ class TranslateArgParser {
         rawResults.wasParsed(_batchSizeKey)
             ? int.parse(rawResults[_batchSizeKey] as String)
             : null;
+    final maxParallelQueries =
+        rawResults.wasParsed(_maxParallelQueriesKey)
+            ? int.parse(rawResults[_maxParallelQueriesKey] as String)
+            : null;
+    final cooldownBetweenBatches =
+        rawResults.wasParsed(_cooldownBetweenBatchesKey)
+            ? int.parse(rawResults[_cooldownBetweenBatchesKey] as String)
+            : null;
 
     return TranslateArgResults(
       help: _getBoolIfParsed(rawResults, _helpKey),
@@ -237,6 +267,8 @@ class TranslateArgParser {
       context: rawResults[_contextKey] as String?,
       excludeLocales: excludeLocales,
       batchSize: batchSize,
+      maxParallelQueries: maxParallelQueries,
+      cooldownBetweenBatches: cooldownBetweenBatches,
       arbDir: rawResults[TranslateOptions.arbDirKey] as String?,
       templateArbFile:
           rawResults[TranslateOptions.templateArbFileKey] as String?,

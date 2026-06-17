@@ -25,6 +25,8 @@ void main() {
           model: model,
           apiKey: Platform.environment['ARB_TRANSLATE_OPEN_AI_API_KEY']!,
           batchSize: 4096,
+          maxParallelQueries: 5,
+          cooldownBetweenBatches: 0,
           context: context,
           useEscaping: false,
           relaxSyntax: false,

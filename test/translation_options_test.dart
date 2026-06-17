@@ -19,6 +19,8 @@ void main() {
         const argResultsContext = 'argResultsContext';
         const argResultsExcludeLocales = ['pl'];
         const argResultsBatchSize = 4096;
+        const argResultsMaxParallelQueries = 3;
+        const argResultsCooldownBetweenBatches = 2;
         const argResultsArbDir = 'argResultsArbDir';
         const argResultsTemplateArbFile = 'argResultsTemplateArbFile';
         const argResultsUseEscaping = true;
@@ -36,6 +38,8 @@ void main() {
           context: argResultsContext,
           excludeLocales: argResultsExcludeLocales,
           batchSize: argResultsBatchSize,
+          maxParallelQueries: argResultsMaxParallelQueries,
+          cooldownBetweenBatches: argResultsCooldownBetweenBatches,
           arbDir: argResultsArbDir,
           templateArbFile: argResultsTemplateArbFile,
           useEscaping: argResultsUseEscaping,
@@ -53,6 +57,8 @@ void main() {
           context: 'yamlResultsContext',
           excludeLocales: ['en'],
           batchSize: 2048,
+          maxParallelQueries: 7,
+          cooldownBetweenBatches: 5,
           arbDir: 'yamlResultsArbDir',
           templateArbFile: 'yamlResultsTemplateArbFile',
           useEscaping: !argResultsUseEscaping,
@@ -109,6 +115,16 @@ void main() {
                 (options) => options.batchSize,
                 'batchSize',
                 argResultsBatchSize,
+              )
+              .having(
+                (options) => options.maxParallelQueries,
+                'maxParallelQueries',
+                argResultsMaxParallelQueries,
+              )
+              .having(
+                (options) => options.cooldownBetweenBatches,
+                'cooldownBetweenBatches',
+                argResultsCooldownBetweenBatches,
               )
               .having((options) => options.arbDir, 'arbDir', argResultsArbDir)
               .having(

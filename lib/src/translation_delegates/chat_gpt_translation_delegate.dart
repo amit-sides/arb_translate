@@ -11,6 +11,8 @@ class ChatGptTranslationDelegate extends TranslationDelegate {
     required Model model,
     required String apiKey,
     required super.batchSize,
+    required super.maxParallelQueries,
+    required super.cooldownBetweenBatches,
     required super.context,
     required super.useEscaping,
     required super.relaxSyntax,
@@ -24,6 +26,8 @@ class ChatGptTranslationDelegate extends TranslationDelegate {
     required String apiKey,
     required Uri baseUrl,
     required super.batchSize,
+    required super.maxParallelQueries,
+    required super.cooldownBetweenBatches,
     required super.context,
     required super.useEscaping,
     required super.relaxSyntax,
@@ -37,10 +41,6 @@ class ChatGptTranslationDelegate extends TranslationDelegate {
 
   @override
   int get maxRetryCount => 5;
-  @override
-  int get maxParallelQueries => 5;
-  @override
-  Duration get queryBackoff => Duration(seconds: 5);
 
   @override
   Future<String> getModelResponse(

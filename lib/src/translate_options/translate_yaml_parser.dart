@@ -15,6 +15,8 @@ class TranslateYamlResults {
     required this.context,
     required this.excludeLocales,
     required this.batchSize,
+    required this.maxParallelQueries,
+    required this.cooldownBetweenBatches,
     required this.arbDir,
     required this.templateArbFile,
     required this.useEscaping,
@@ -33,6 +35,8 @@ class TranslateYamlResults {
       context = null,
       excludeLocales = null,
       batchSize = null,
+      maxParallelQueries = null,
+      cooldownBetweenBatches = null,
       arbDir = null,
       templateArbFile = null,
       useEscaping = null,
@@ -69,6 +73,12 @@ class TranslateYamlResults {
   /// batch. The actual number can be higher if a single message is too large.
   final int? batchSize;
 
+  /// The maximum number of parallel batch queries to run concurrently.
+  final int? maxParallelQueries;
+
+  /// The cooldown duration in seconds between batch requests.
+  final int? cooldownBetweenBatches;
+
   /// The directory containing the ARB files.
   final String? arbDir;
 
@@ -95,6 +105,8 @@ class TranslateYamlParser {
   static const _contextKey = 'arb-translate-context';
   static const _excludeLocalesKey = 'arb-translate-exclude-locales';
   static const _batchSizeKey = 'arb-translate-batch-size';
+  static const _maxParallelQueriesKey = 'arb-translate-max-parallel-queries';
+  static const _cooldownBetweenBatchesKey = 'arb-translate-cooldown-between-batches';
 
   /// Parses the given [file] and returns the translation options.
   ///
@@ -132,6 +144,8 @@ class TranslateYamlParser {
       context: _tryReadString(yamlNode, _contextKey),
       excludeLocales: _tryReadStringList(yamlNode, _excludeLocalesKey),
       batchSize: _tryReadInt(yamlNode, _batchSizeKey),
+      maxParallelQueries: _tryReadInt(yamlNode, _maxParallelQueriesKey),
+      cooldownBetweenBatches: _tryReadInt(yamlNode, _cooldownBetweenBatchesKey),
       templateArbFile:
           _tryReadUri(yamlNode, TranslateOptions.templateArbFileKey)?.path,
       apiKey: _tryReadString(yamlNode, _apiKeyKey),

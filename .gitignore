@@ -4,3 +4,6 @@
 
 # Claude Code configuration
 CLAUDE.md
+
+# IDE configuration
+/.idea/

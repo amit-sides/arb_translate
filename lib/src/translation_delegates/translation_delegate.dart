@@ -10,19 +10,22 @@ import 'package:meta/meta.dart';
 abstract class TranslationDelegate {
   const TranslationDelegate({
     required this.batchSize,
+    required this.maxParallelQueries,
+    required this.cooldownBetweenBatches,
     required this.context,
     required this.useEscaping,
     required this.relaxSyntax,
   });
 
   final int batchSize;
+  final int maxParallelQueries;
+  final int cooldownBetweenBatches;
   final String? context;
   final bool useEscaping;
   final bool relaxSyntax;
 
   int get maxRetryCount;
-  int get maxParallelQueries;
-  Duration get queryBackoff;
+  Duration get queryBackoff => Duration(seconds: cooldownBetweenBatches);
 
   Future<Map<String, String>> translate(
     Map<String, Object?> resources,
@@ -43,6 +46,12 @@ abstract class TranslationDelegate {
       ]);
 
       results.addAll({for (final results in batchResults) ...results});
+
+      // Add cooldown between batch groups if not the last group
+      if (i + maxParallelQueries < batches.length && cooldownBetweenBatches > 0) {
+        print('Cooldown for ${cooldownBetweenBatches}s before next batch group...');
+        await Future.delayed(Duration(seconds: cooldownBetweenBatches));
+      }
     }
 
     return results;

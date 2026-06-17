@@ -6,6 +6,8 @@ class NoOpTranslationDelegate extends TranslationDelegate {
   const NoOpTranslationDelegate()
       : super(
           batchSize: 4096,
+          maxParallelQueries: 5,
+          cooldownBetweenBatches: 0,
           context: null,
           useEscaping: false,
           relaxSyntax: false,
@@ -15,13 +17,7 @@ class NoOpTranslationDelegate extends TranslationDelegate {
   int get batchSize => throw UnimplementedError();
 
   @override
-  int get maxParallelQueries => throw UnimplementedError();
-
-  @override
   int get maxRetryCount => throw UnimplementedError();
-
-  @override
-  Duration get queryBackoff => throw UnimplementedError();
 
   @override
   Future<String> getModelResponse(

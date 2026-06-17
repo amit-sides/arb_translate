@@ -12,6 +12,8 @@ class GeminiTranslationDelegate extends TranslationDelegate {
     required Model model,
     required String apiKey,
     required super.batchSize,
+    required super.maxParallelQueries,
+    required super.cooldownBetweenBatches,
     required super.context,
     required bool disableSafety,
     required super.useEscaping,
@@ -38,6 +40,8 @@ class GeminiTranslationDelegate extends TranslationDelegate {
     required String apiKey,
     required Uri projectUrl,
     required super.batchSize,
+    required super.maxParallelQueries,
+    required super.cooldownBetweenBatches,
     required super.context,
     required bool disableSafety,
     required super.useEscaping,
@@ -63,10 +67,6 @@ class GeminiTranslationDelegate extends TranslationDelegate {
 
   @override
   int get maxRetryCount => 5;
-  @override
-  int get maxParallelQueries => 5;
-  @override
-  Duration get queryBackoff => Duration(seconds: 5);
 
   static final _disabledSafetySettings =
       [

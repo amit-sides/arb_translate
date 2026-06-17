@@ -29,6 +29,8 @@ void main() {
               model: model,
               apiKey: Platform.environment['ARB_TRANSLATE_GEMINI_API_KEY']!,
               batchSize: 4096,
+              maxParallelQueries: 5,
+              cooldownBetweenBatches: 0,
               context: context,
               disableSafety: false,
               useEscaping: false,
@@ -75,6 +77,8 @@ void main() {
               projectUrl: Uri.parse(
                   Platform.environment['ARB_TRANSLATE_VERTEX_AI_PROJECT_URL']!),
               batchSize: 4096,
+              maxParallelQueries: 5,
+              cooldownBetweenBatches: 0,
               context: context,
               disableSafety: false,
               useEscaping: false,

@@ -84,6 +84,8 @@ class TranslateOptions {
     required String? templateArbFile,
     required this.excludeLocales,
     required this.batchSize,
+    required this.maxParallelQueries,
+    required this.cooldownBetweenBatches,
     required bool? useEscaping,
     required bool? relaxSyntax,
   }) : disableSafety = disableSafety ?? false,
@@ -110,6 +112,8 @@ class TranslateOptions {
   final String templateArbFile;
   final List<String>? excludeLocales;
   final int batchSize;
+  final int maxParallelQueries;
+  final int cooldownBetweenBatches;
   final bool useEscaping;
   final bool relaxSyntax;
 
@@ -217,6 +221,12 @@ class TranslateOptions {
           argResults.templateArbFile ?? yamlResults.templateArbFile,
       excludeLocales: argResults.excludeLocales ?? yamlResults.excludeLocales,
       batchSize: argResults.batchSize ?? yamlResults.batchSize ?? 4096,
+      maxParallelQueries:
+          argResults.maxParallelQueries ?? yamlResults.maxParallelQueries ?? 5,
+      cooldownBetweenBatches:
+          argResults.cooldownBetweenBatches ??
+              yamlResults.cooldownBetweenBatches ??
+              0,
       useEscaping: argResults.useEscaping ?? yamlResults.useEscaping,
       relaxSyntax: argResults.relaxSyntax ?? yamlResults.relaxSyntax,
     );
