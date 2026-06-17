@@ -226,10 +226,33 @@ abstract class TranslationDelegate {
     Map<String, Object?> resources,
     Map<String, String> results,
   ) {
+    final messageResources = resources.keys.where(
+      (key) => !key.startsWith('@'),
+    );
+
+    // First, validate placeholder count matches
+    for (final key in messageResources) {
+      final originalMessage = resources[key] as String;
+      final translatedMessage = results[key]!;
+
+      final originalPlaceholders = _extractPlaceholders(originalMessage);
+      final translatedPlaceholders = _extractPlaceholders(translatedMessage);
+
+      if (originalPlaceholders.length != translatedPlaceholders.length) {
+        print(
+          'Warning: Placeholder count mismatch for "$key". '
+          'Original has ${originalPlaceholders.length} placeholder(s): [${originalPlaceholders.join(", ")}], '
+          'Translation has ${translatedPlaceholders.length} placeholder(s): [${translatedPlaceholders.join(", ")}]',
+        );
+        return false;
+      }
+    }
+
+    // Then validate with Message parser for syntax errors
     final templateBundle = FakeAppResourcesBundle(resources, true);
     final otherBundle = FakeAppResourcesBundle(results, false);
 
-    for (final key in resources.keys.where((key) => !key.startsWith('@'))) {
+    for (final key in messageResources) {
       try {
         final message = Message(
           templateBundle,
@@ -252,5 +275,19 @@ abstract class TranslationDelegate {
     }
 
     return true;
+  }
+
+  // Extract placeholders like {name}, {count}, etc. from a message string
+  List<String> _extractPlaceholders(String message) {
+    final placeholders = <String>[];
+    
+    // First, extract simple placeholders {name}, {count}, etc.
+    // This regex matches {word} but NOT {word, or {word space (ICU syntax)
+    final simplePlaceholderRegex = RegExp(r'\{([a-zA-Z_][a-zA-Z0-9_]*)\}');
+    for (final match in simplePlaceholderRegex.allMatches(message)) {
+      placeholders.add(match.group(1)!);
+    }
+    
+    return placeholders.toSet().toList(); // Remove duplicates
   }
 }

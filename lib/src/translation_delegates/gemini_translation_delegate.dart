@@ -89,7 +89,9 @@ class GeminiTranslationDelegate extends TranslationDelegate {
     final prompt = [
       Content.text(
         'Translate ARB messages for ${context ?? 'app'} to locale "$locale". '
-        'Add other ICU plural forms according to CLDR rules if necessary. '
+        'Add other ICU plural forms according to CLDR rules if necessary, '
+        'CRITICAL: make sure to keep the exact same amount, names and types '
+        'of placeholders as the original language. '
         'Return only raw JSON.\n\n'
         '$encodedResources',
       ),
