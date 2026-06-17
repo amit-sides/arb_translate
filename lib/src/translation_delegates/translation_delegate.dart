@@ -5,7 +5,10 @@ import 'package:arb_translate/src/flutter_tools/fakes/fake_app_resource_bundle_c
 import 'package:arb_translate/src/flutter_tools/gen_l10n_types.dart';
 import 'package:arb_translate/src/flutter_tools/localizations_utils.dart';
 import 'package:arb_translate/src/translation_delegates/translate_exception.dart';
+import 'package:icu_parser/icu_parser.dart';
+import 'package:icu_parser/intl_message.dart' as icu_msg;
 import 'package:meta/meta.dart';
+import 'package:petitparser/petitparser.dart';
 
 abstract class TranslationDelegate {
   const TranslationDelegate({
@@ -235,8 +238,8 @@ abstract class TranslationDelegate {
       final originalMessage = resources[key] as String;
       final translatedMessage = results[key]!;
 
-      final originalPlaceholders = _extractPlaceholders(originalMessage);
-      final translatedPlaceholders = _extractPlaceholders(translatedMessage);
+      final originalPlaceholders = extractPlaceholders(originalMessage);
+      final translatedPlaceholders = extractPlaceholders(translatedMessage);
 
       if (originalPlaceholders.length != translatedPlaceholders.length) {
         print(
@@ -276,18 +279,156 @@ abstract class TranslationDelegate {
 
     return true;
   }
+  /// Extracts all unique placeholder names from an ICU message string using the official icu_parser API.
+  List<String> extractPlaceholders(String icuMessage) {
+    final placeholders = <String>{};
+    if (icuMessage.isEmpty) {
+      return [];
+    }
+
+    IcuParser parser = IcuParser();
+
+    try {
+      // 1. Initialize the internal message parser instance and parse the string
+      // This returns a MainMessage or a CompositeMessage containing the structural nodes.
+      final Result result = parser.contents.plus().parse(icuMessage);
+
+
+      // 2. Traversal helper to walk the parsed message components
+      void extractFromMessage(icu_msg.Message m) {
+        if (m is icu_msg.VariableSubstitution) {
+          // Simple variables (e.g. {name} or {count})
+          placeholders.add(m.variableNameFromParser);
+          return;
+        } else if (m is icu_msg.Plural) {
+          // Plurals use a selector variable
+          placeholders.add(m.mainArgument!);
+          if (m.zero != null) extractFromMessage(m.zero!);
+          if (m.one != null) extractFromMessage(m.one!);
+          if (m.two != null) extractFromMessage(m.two!);
+          if (m.few != null) extractFromMessage(m.few!);
+          if (m.many != null) extractFromMessage(m.many!);
+          if (m.other != null) extractFromMessage(m.other!);
+          return;
+        } else if (m is icu_msg.Select) {
+          placeholders.add(m.mainArgument!);
+          // Select layout behaves identically to plurals
+          for (final subMessage in m.cases.values) {
+            extractFromMessage(subMessage);
+            return;
+          }
+        } else if (m is icu_msg.CompositeMessage) {
+          // A composite message contains a list of sub-messages (pieces of text and variables combined)
+          for (final piece in m.pieces!) {
+            extractFromMessage(piece);
+          }
+          return;
+        } else if (m is icu_msg.Gender) {
+          placeholders.add(m.mainArgument!);
+          if (m.male != null) extractFromMessage(m.male!);
+          if (m.female != null) extractFromMessage(m.female!);
+          if (m.other != null) extractFromMessage(m.other!);
+          return;
+        } else if (m is icu_msg.LiteralString) {
+          // Literal strings contain no placeholders
+          return;
+        }
+
+        print('Unhandled message type: ${m.runtimeType}');
+      }
+
+      // 3. Process the top-level object hierarchy
+      for (dynamic message in result.value) {
+        if (message is icu_msg.Message) {
+          extractFromMessage(message);
+        }
+      }
+    } catch (e) {
+      print('Error parsing ICU message: $e');
+    }
+
+    return placeholders.toList();
+  }
 
   // Extract placeholders like {name}, {count}, etc. from a message string
-  List<String> _extractPlaceholders(String message) {
-    final placeholders = <String>[];
+  // Uses icu_parser to properly parse ICU MessageFormat syntax
+  List<String> extractPlaceholders2(String message) {
+    final placeholders = <String>{};
     
-    // First, extract simple placeholders {name}, {count}, etc.
-    // This regex matches {word} but NOT {word, or {word space (ICU syntax)
-    final simplePlaceholderRegex = RegExp(r'\{([a-zA-Z_][a-zA-Z0-9_]*)\}');
-    for (final match in simplePlaceholderRegex.allMatches(message)) {
-      placeholders.add(match.group(1)!);
+    try {
+      final parser = IcuParser();
+
+      final parseResult = parser.message.parse(message);
+      if (parseResult is Success && parseResult.value != null) {
+        final msg = parseResult.value as icu_msg.Message;
+        _extractPlaceholdersFromMessage(msg, placeholders);
+      }
+    } catch (e) {
+      // If parsing fails, fallback to simple regex extraction
+      final simplePlaceholderRegex = RegExp(r'\{([a-zA-Z_][a-zA-Z0-9_]*)\}');
+      for (final match in simplePlaceholderRegex.allMatches(message)) {
+        placeholders.add(match.group(1)!);
+      }
     }
     
-    return placeholders.toSet().toList(); // Remove duplicates
+    return placeholders.toList();
+  }
+  
+  // Extract placeholders from an ICU Message object
+  void _extractPlaceholdersFromMessage(icu_msg.Message msg, Set<String> placeholders) {
+    // Handle MainMessage - has messagePieces property
+    if (msg is icu_msg.MainMessage) {
+      for (final piece in msg.messagePieces) {
+        _extractPlaceholdersFromMessage(piece, placeholders);
+      }
+    }
+    // Handle CompositeMessage - has pieces property
+    else if (msg is icu_msg.CompositeMessage && msg.pieces != null) {
+      for (final piece in msg.pieces!) {
+        _extractPlaceholdersFromMessage(piece, placeholders);
+      }
+    }
+    // Handle VariableSubstitution - this is a simple placeholder like {name}
+    else if (msg is icu_msg.VariableSubstitution) {
+      if (msg.variableName != null) {
+        placeholders.add(msg.variableName!);
+      }
+    }
+    // Handle Plural - has zero, one, two, few, many, other properties
+    else if (msg is icu_msg.Plural) {
+      // The main argument name (e.g., "count" in {count, plural, ...})
+      if (msg.mainArgument != null) {
+        placeholders.add(msg.mainArgument!);
+      }
+      // Recursively process all plural form options
+      if (msg.zero != null) _extractPlaceholdersFromMessage(msg.zero!, placeholders);
+      if (msg.one != null) _extractPlaceholdersFromMessage(msg.one!, placeholders);
+      if (msg.two != null) _extractPlaceholdersFromMessage(msg.two!, placeholders);
+      if (msg.few != null) _extractPlaceholdersFromMessage(msg.few!, placeholders);
+      if (msg.many != null) _extractPlaceholdersFromMessage(msg.many!, placeholders);
+      if (msg.other != null) _extractPlaceholdersFromMessage(msg.other!, placeholders);
+    }
+    // Handle Gender (Select) - has female, male, other properties
+    else if (msg is icu_msg.Gender) {
+      // The main argument name (e.g., "gender" in {gender, select, ...})
+      if (msg.mainArgument != null) {
+        placeholders.add(msg.mainArgument!);
+      }
+      // Recursively process all gender options
+      if (msg.female != null) _extractPlaceholdersFromMessage(msg.female!, placeholders);
+      if (msg.male != null) _extractPlaceholdersFromMessage(msg.male!, placeholders);
+      if (msg.other != null) _extractPlaceholdersFromMessage(msg.other!, placeholders);
+    }
+    // Handle Select - has cases map
+    else if (msg is icu_msg.Select) {
+      // The main argument name
+      if (msg.mainArgument != null) {
+        placeholders.add(msg.mainArgument!);
+      }
+      // Recursively process all select cases
+      for (final case_ in msg.cases.values) {
+        _extractPlaceholdersFromMessage(case_, placeholders);
+      }
+    }
   }
 }
