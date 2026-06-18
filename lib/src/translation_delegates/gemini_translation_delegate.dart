@@ -66,7 +66,7 @@ class GeminiTranslationDelegate extends TranslationDelegate {
        );
 
   @override
-  int get maxRetryCount => 5;
+  int get maxRetryCount => 25;
 
   static final _disabledSafetySettings =
       [
