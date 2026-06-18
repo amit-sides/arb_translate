@@ -101,7 +101,15 @@ abstract class TranslationDelegate {
       } on QuotaExceededException {
         print(
           'Quota exceeded for batch $batchName, retrying in '
-          '${queryBackoff.inSeconds}s...',
+              '${queryBackoff.inSeconds}s...',
+        );
+
+        await Future.delayed(queryBackoff);
+        continue;
+      } on HighDemandException {
+        print(
+          'Model High Demand for batch $batchName, retrying in '
+              '${queryBackoff.inSeconds}s...',
         );
 
         await Future.delayed(queryBackoff);

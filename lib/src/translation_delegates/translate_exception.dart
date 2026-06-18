@@ -27,6 +27,12 @@ class QuotaExceededException implements TranslateException {
   String get message => 'Quota exceeded';
 }
 
+class HighDemandException implements TranslateException {
+  @override
+  String get message =>
+      'The model is currently experiencing high demand. Please try again later.';
+}
+
 class NoResponseException implements TranslateException {
   @override
   String get message => 'Failed to get a response from the model';

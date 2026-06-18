@@ -121,6 +121,8 @@ class GeminiTranslationDelegate extends TranslationDelegate {
       } else if (e.message.startsWith('Quota exceeded') ||
           e.message.startsWith('Resource has been exhausted')) {
         throw QuotaExceededException();
+      } else if (e.message.startsWith('This model is currently experiencing high demand')) {
+        throw HighDemandException();
       }
 
       rethrow;
