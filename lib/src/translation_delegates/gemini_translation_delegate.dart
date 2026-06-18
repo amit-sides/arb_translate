@@ -90,8 +90,8 @@ class GeminiTranslationDelegate extends TranslationDelegate {
       Content.text(
         'Translate ARB messages for ${context ?? 'app'} to locale "$locale". '
         'Add other ICU plural forms according to CLDR rules if necessary, '
-        'CRITICAL: make sure to keep the exact same amount, names and types '
-        'of placeholders as the original language. '
+        'CRITICAL: You must use EXACTLY the placeholders provided in the source text. '
+        'NEVER add new placeholders (like {count}) if they do not exist in the original English string. '
         'Return only raw JSON.\n\n'
         '$encodedResources',
       ),
